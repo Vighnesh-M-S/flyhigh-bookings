@@ -20,5 +20,18 @@ class FlightViewSet(viewsets.ModelViewSet):
         flights = self.queryset.filter(origin=origin, destination=destination, departure_time__date=date)
         serializer = self.get_serializer(flights, many=True)
         return Response(serializer.data)
+class BookingViewSet(viewsets.ModelViewSet):
+    queryset = Booking.objects.all()
+    serializer_class = BookingSerializer
+
+    def create(self, request, *args, **kwargs):
+        flight_id = request.data['flight']
+        flight = Flight.objects.get(id=flight_id)
+        if flight.seat_count > 0:
+            flight.seat_count -= 1
+            flight.save()
+            return super().create(request, *args, **kwargs)
+        else:
+            return Response({"error": "No seats available"}, status=400)
 
 
