@@ -1,57 +1,55 @@
 // src/components/FlightSearch.js
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import api from '../api';
 
 function FlightSearch() {
-  const [origin, setOrigin] = useState('');
-  const [destination, setDestination] = useState('');
-  const [date, setDate] = useState('');
   const [flights, setFlights] = useState([]);
+  const [searchQuery, setSearchQuery] = useState('');
 
-  const searchFlights = async (e) => {
-    e.preventDefault();
-    try {
-      const response = await api.get('/api/flights/search/', {
-        params: { origin, destination, date },
-      });
-      setFlights(response.data);
-    } catch (error) {
-      console.error('Search failed:', error);
-    }
+  useEffect(() => {
+    const fetchFlights = async () => {
+      try {
+        const response = await api.get('/api/flights/');
+        setFlights(response.data);
+      } catch (error) {
+        console.error('Failed to fetch flights', error);
+      }
+    };
+
+    fetchFlights();
+  }, []);
+
+  const handleSearch = (event) => {
+    setSearchQuery(event.target.value);
   };
+
+  const filteredFlights = flights.filter(
+    (flight) =>
+      flight.origin.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      flight.destination.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
   return (
     <div>
-      <form onSubmit={searchFlights}>
-        <input
-          type="text"
-          value={origin}
-          onChange={(e) => setOrigin(e.target.value)}
-          placeholder="Origin"
-        />
-        <input
-          type="text"
-          value={destination}
-          onChange={(e) => setDestination(e.target.value)}
-          placeholder="Destination"
-        />
-        <input
-          type="date"
-          value={date}
-          onChange={(e) => setDate(e.target.value)}
-        />
-        <button type="submit">Search</button>
-      </form>
-      <div>
-        {flights.map((flight) => (
-          <div key={flight.id}>
-            {flight.origin} to {flight.destination} on {flight.departure_time}
-          </div>
+      <h2>Search Flights</h2>
+      <input
+        type="text"
+        value={searchQuery}
+        onChange={handleSearch}
+        placeholder="Search by origin or destination"
+      />
+      <ul>
+        {filteredFlights.map((flight) => (
+          <li key={flight.id}>
+            <strong>{flight.flight_number}</strong> - {flight.origin} to {flight.destination} <br />
+            Departure: {new Date(flight.departure_time).toLocaleString()} <br />
+            Arrival: {new Date(flight.arrival_time).toLocaleString()} <br />
+            Available Seats: {flight.available_seats}
+          </li>
         ))}
-      </div>
+      </ul>
     </div>
   );
 }
 
 export default FlightSearch;
-
